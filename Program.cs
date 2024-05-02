@@ -51,9 +51,8 @@ namespace WarGame
                     Console.WriteLine("Введены некорректные данные!");
                 }
             }
-
         }
-        
+
         private void FormationPlatoon()
         {
 
@@ -81,9 +80,6 @@ namespace WarGame
             Armor -= Damage;
             Health -= damageDealt;
         }
-        
-        
-        
     }
 
     class SingleTargetHighDamageSoldier : Soldier
@@ -106,33 +102,23 @@ namespace WarGame
             _isPossibleHitAgain = isPossibleHitAgain;
         }
 
-        public void Attack()
+        public void Attack(List<Soldier> soldiers)
         {
             for (int i = 0; i < _numberSoldiersPerStrike; i++)
             {
-                SelectionSoldiers.TakeDamage(Damage);
 
-                Console.WriteLine($"{Name} атакует {SelectionSoldiers.Name} и наносит {damageDealt} ед. урона.");
+
+                // Console.WriteLine($"{Name} атакует {solder.Name} и наносит {damageDealt} ед. урона.");
             }
         }
 
-        private Soldier SelectionSoldiers(List<Soldier> soldiers)
+        private Soldier SelectionSoldiers()
         {
             int randomIndexSoldier = UserUtils.GenerateRandomNumber(0, _numberSoldiersPerStrike);
 
             if (_isPossibleHitAgain == false)
             {
-                while (true)
-                {
 
-                    for (int i = 0; i < _attackedSoldierNumbers.Count; i++)
-                    {
-                    _attackedSoldierNumbers.Add(randomIndexSoldier);
-                        
-                    }
-                    
-                    
-                }
             }
 
 
