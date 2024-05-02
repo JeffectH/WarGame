@@ -10,6 +10,7 @@ namespace WarGame
         static void Main(string[] args)
         {
             Battlefield battlefield = new Battlefield(55);
+            battlefield.Fight();
         }
     }
 
@@ -19,43 +20,65 @@ namespace WarGame
         private int _minNumberSoldierPlatoon = 15;
         private int _maxNumberSoldierPlatoon = 60;
         private bool _isFight = true;
+        private Soldier _soldierTypeA;
+        private Soldier _soldierTypeB;
+        private Soldier _soldierTypeC;
+        private Soldier _soldierTypeD;
+        private List<Soldier> _platoonFirst = new List<Soldier>();
+        private List<Soldier> _platoonSecond = new List<Soldier>();
 
         public Battlefield(int numberSoldierPlatoon)
         {
             _numberSoldierPlatoon = (numberSoldierPlatoon < _minNumberSoldierPlatoon) ? _minNumberSoldierPlatoon : (numberSoldierPlatoon > _maxNumberSoldierPlatoon) ? _maxNumberSoldierPlatoon : numberSoldierPlatoon;
-        }
 
-        Soldier SoldierTypeA = new Soldier("Иван “Простой”", 100, 15, 50);
-        Soldier SoldierTypeB = new SingleTargetHighDamageSoldier("Алексей “Убийца”", 100, 15, 50, 2.5f);
-        Soldier SoldierTypeC = new MultiTargetSoldier("Наталья “Множитель”", 100, 15, 50, 2, false);
-        Soldier SoldierTypeD = new MultiTargetSoldier("Дмитрий “Многократный”", 100, 15, 50, 3, true);
+            _soldierTypeA = new Soldier("Иван “Простой”", 100, 15, 50);
+            _soldierTypeB = new SingleTargetHighDamageSoldier("Алексей “Убийца”", 100, 15, 50, 2.5f);
+            _soldierTypeC = new MultiTargetSoldier("Наталья “Множитель”", 100, 15, 50, 2, false);
+            _soldierTypeD = new MultiTargetSoldier("Дмитрий “Многократный”", 100, 15, 50, 3, true);
+        }
 
         public void Fight()
         {
+            Console.WriteLine("Сейчас будет битва. 2 взвода. В каждом взводе по " + _numberSoldierPlatoon + " солдат\r\n");
+            Console.WriteLine("В каждом взводе присутствуют 4 типа солдат.\r\n");
+            Console.WriteLine("" +
+                "Иван “Простой” - обычный солдат, но надежный и преданный своему долгу.\r\n" +
+                "Алексей “Убийца” - атакует одного противника, но с огромным уроном. Его враги дрожат при упоминании его имени.\r\n" +
+                "Наталья “Множитель” - атакует группу противников одновременно, не повторяя свои атаки. Она как вихрь смерти на поле боя.\r\n" +
+                "Дмитрий “Многократный” - атакует несколько противников одновременно, и его атакованные солдаты могут вновь вступать в бой.");
+
+            Console.WriteLine("Происходит формирование взвода...");
+
+            Console.WriteLine("Все готово! Можно начинать битву!");
+            Console.ReadKey();
+            Console.Clear();
+
             while (_isFight)
             {
-                Console.WriteLine("" +
-                    "Иван Простой - обычный солдат, но надежный и преданный своему долгу.\r\n" +
-                    "Алексей “Убийца” - атакует одного противника, но с огромным уроном. Его враги дрожат при упоминании его имени.\r\n" +
-                    "Наталья “Множитель” - атакует группу противников одновременно, не повторяя свои атаки. Она как вихрь смерти на поле боя.\r\n" +
-                    "Дмитрий “Многократный” - атакует несколько противников одновременно, и его атакованные солдаты могут вновь вступать в бой. Он создает цепную реакцию разрушения.");
 
-                Console.WriteLine("Введите колличество человек в взводе от 15 до 60");
 
-                if (int.TryParse(Console.ReadLine(), out int userInput))
-                {
-                    Console.WriteLine("Происходит формирование взвода...");
-                }
-                else
-                {
-                    Console.WriteLine("Введены некорректные данные!");
-                }
+
+
+
+
+                _isFight = false;
+                Console.ReadKey();
             }
+
+
         }
 
         private void FormationPlatoon()
         {
-
+            Soldier[] soldierTypes = { _soldierTypeA, _soldierTypeB, _soldierTypeC, _soldierTypeD };
+            int randomValue;
+            for (int i = 0; i < _numberSoldierPlatoon; i++)
+            {
+                randomValue = UserUtils.GenerateRandomNumber(0, soldierTypes.Length);
+                _platoonFirst.Add(soldierTypes[randomValue]);
+                randomValue = UserUtils.GenerateRandomNumber(0, soldierTypes.Length);
+                _platoonSecond.Add(soldierTypes[randomValue]);
+            }
         }
     }
 
@@ -80,6 +103,9 @@ namespace WarGame
             Armor -= Damage;
             Health -= damageDealt;
         }
+
+
+
     }
 
     class SingleTargetHighDamageSoldier : Soldier
@@ -102,28 +128,38 @@ namespace WarGame
             _isPossibleHitAgain = isPossibleHitAgain;
         }
 
-        public void Attack(List<Soldier> soldiers)
+        public void Attack()
         {
             for (int i = 0; i < _numberSoldiersPerStrike; i++)
             {
 
+                //  SelectionSoldiers.TakeDamage(Damage);
 
-                // Console.WriteLine($"{Name} атакует {solder.Name} и наносит {damageDealt} ед. урона.");
+                // Console.WriteLine($"{Name} атакует {SelectionSoldiers.Name} и наносит {damageDealt} ед. урона.");
             }
         }
 
-        private Soldier SelectionSoldiers()
+        private Soldier SelectionSoldiers(List<Soldier> soldiers)
         {
             int randomIndexSoldier = UserUtils.GenerateRandomNumber(0, _numberSoldiersPerStrike);
 
             if (_isPossibleHitAgain == false)
             {
+                while (true)
+                {
+                    for (int i = 0; i < _attackedSoldierNumbers.Count; i++)
+                    {
+                        _attackedSoldierNumbers.Add(randomIndexSoldier);
+                    }
 
+                    for (int i = 0; i < _attackedSoldierNumbers.Count; i++)
+                    {
+                        _attackedSoldierNumbers.Add(randomIndexSoldier);
+
+                    }
+                }
             }
-
-
         }
-
     }
 
     class UserUtils
@@ -134,4 +170,3 @@ namespace WarGame
             s_random.Next(min, max);
     }
 }
-
