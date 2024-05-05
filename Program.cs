@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Net.NetworkInformation;
-using System.Runtime.CompilerServices;
 
 namespace WarGame
 {
@@ -19,7 +17,6 @@ namespace WarGame
         private int _numberSoldierPlatoon;
         private int _minNumberSoldierPlatoon = 15;
         private int _maxNumberSoldierPlatoon = 60;
-        private bool _isFight = true;
         private Soldier _soldierTypeA;
         private Soldier _soldierTypeB;
         private Soldier _soldierTypeC;
@@ -48,23 +45,37 @@ namespace WarGame
                 "Дмитрий “Многократный” - атакует несколько противников одновременно, и его атакованные солдаты могут вновь вступать в бой.");
 
             Console.WriteLine("Происходит формирование взвода...");
-
+            FormationPlatoon();
             Console.WriteLine("Все готово! Можно начинать битву!");
             Console.ReadKey();
             Console.Clear();
 
-            while (_isFight)
+            while (_platoonFirst.Count != 0 || _platoonSecond.Count != 0)
             {
+                int randomValue;
+
+                for (int i = 0; i < _platoonFirst.Count; i++)
+                {
+
+                    randomValue = UserUtils.GenerateRandomNumber(0, _platoonSecond.Count);
+
+                    if (_platoonFirst[i] is MultiTargetSoldier)
+                    {
+                        for (int j = 0; j < _platoonFirst[i].NumberSoldiersPerStrike; j++)
+                        {
+
+                        }
+
+                        continue;
+                    }
 
 
-
-
-
-
-                _isFight = false;
-                Console.ReadKey();
+                }
             }
+        }
 
+        private void RemoveIncapacitatedSoldiers()
+        {
 
         }
 
@@ -76,6 +87,7 @@ namespace WarGame
             {
                 randomValue = UserUtils.GenerateRandomNumber(0, soldierTypes.Length);
                 _platoonFirst.Add(soldierTypes[randomValue]);
+
                 randomValue = UserUtils.GenerateRandomNumber(0, soldierTypes.Length);
                 _platoonSecond.Add(soldierTypes[randomValue]);
             }
@@ -84,10 +96,9 @@ namespace WarGame
 
     class Soldier
     {
-        protected string Name;
-        protected float Health;
         protected float Damage;
-        protected float Armor;
+
+        private bool _isDeath;
 
         public Soldier(string name, float health, float damage, float armor)
         {
@@ -97,15 +108,25 @@ namespace WarGame
             Armor = armor;
         }
 
+        public string Name { get; private set; }
+        public float Health { get; private set; }
+        public float Armor { get; private set; }
+        public bool IsDeath => _isDeath;
+
         public void TakeDamage(float damage)
         {
             float damageDealt = Math.Max(0, damage - Armor);
             Armor -= Damage;
             Health -= damageDealt;
+
+            if (Health <= 0)
+                _isDeath = true;
         }
 
-
-
+        public virtual void Attack(Soldier soldier)
+        {
+            soldier.TakeDamage(Damage);
+        }
     }
 
     class SingleTargetHighDamageSoldier : Soldier
@@ -118,48 +139,21 @@ namespace WarGame
 
     class MultiTargetSoldier : Soldier
     {
-        private int _numberSoldiersPerStrike;
-        private bool _isPossibleHitAgain;
+        public int NumberSoldiersPerStrike { get; private set; }
+        public bool _isPossibleHitAgain;
         private List<int> _attackedSoldierNumbers = new List<int>();
 
         public MultiTargetSoldier(string name, int health, int damage, int armor, int numberSoldiersPerStrike, bool isPossibleHitAgain) : base(name, health, damage, armor)
         {
-            _numberSoldiersPerStrike = numberSoldiersPerStrike;
+            NumberSoldiersPerStrike = numberSoldiersPerStrike;
             _isPossibleHitAgain = isPossibleHitAgain;
         }
 
-        public void Attack()
-        {
-            for (int i = 0; i < _numberSoldiersPerStrike; i++)
-            {
+        // Console.WriteLine($"{Name} атакует {SelectionSoldiers.Name} и наносит {damageDealt} ед. урона.");
 
-                //  SelectionSoldiers.TakeDamage(Damage);
 
-                // Console.WriteLine($"{Name} атакует {SelectionSoldiers.Name} и наносит {damageDealt} ед. урона.");
-            }
-        }
 
-        private Soldier SelectionSoldiers(List<Soldier> soldiers)
-        {
-            int randomIndexSoldier = UserUtils.GenerateRandomNumber(0, _numberSoldiersPerStrike);
 
-            if (_isPossibleHitAgain == false)
-            {
-                while (true)
-                {
-                    for (int i = 0; i < _attackedSoldierNumbers.Count; i++)
-                    {
-                        _attackedSoldierNumbers.Add(randomIndexSoldier);
-                    }
-
-                    for (int i = 0; i < _attackedSoldierNumbers.Count; i++)
-                    {
-                        _attackedSoldierNumbers.Add(randomIndexSoldier);
-
-                    }
-                }
-            }
-        }
     }
 
     class UserUtils
