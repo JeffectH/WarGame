@@ -35,8 +35,8 @@ namespace WarGame
                 "Дмитрий “Многократный” - атакует несколько противников одновременно, и его атакованные солдаты могут вновь вступать в бой.");
 
             Console.WriteLine("\nПроисходит формирование взвода...");
-            _firstPlatoon.FormationPlatoon();
-            _secondPlatoon.FormationPlatoon();
+            _firstPlatoon.Formation();
+            _secondPlatoon.Formation();
             Console.WriteLine("\nВсе готово! Можно начинать битву!");
             Console.ReadKey();
             Console.Clear();
@@ -44,13 +44,13 @@ namespace WarGame
             while (_firstPlatoon.NumberSolders != 0 && _secondPlatoon.NumberSolders != 0)
             {
                 Console.WriteLine("\nАттакует взвод №1 \n");
-                _firstPlatoon.AttackPlatoon(_secondPlatoon.Soldiers);
+                _firstPlatoon.Attack(_secondPlatoon);
 
                 Console.WriteLine("\nАттакует взвод №2 \n");
-                _secondPlatoon.AttackPlatoon(_firstPlatoon.Soldiers);
+                _secondPlatoon.Attack(_firstPlatoon);
 
-                _firstPlatoon.UpdateListPlatoon();
-                _secondPlatoon.UpdateListPlatoon();
+                _firstPlatoon.UpdateList();
+                _secondPlatoon.UpdateList();
 
                 Console.WriteLine($"\nКолличество человек в взводе №1: {_firstPlatoon.NumberSolders}." + "\n" +
                     $"Колличество человек в взводе №2: {_secondPlatoon.NumberSolders}.");
@@ -92,26 +92,24 @@ class Platoon
 
     public int NumberSolders => _solders.Count;
 
-    public List<Soldier> Soldiers => _solders;
-
-    public void FormationPlatoon()
+    public void Formation()
     {
         Soldier[] soldierTypes = { new SingleSoldier("Иван “Простой”", 400, 15, 50), new SingleTargetHighDamageSoldier("Алексей “Убийца”", 100, 15, 50, 2.5f),
             new MultiTargetSoldierRepeatedStrikes("Наталья “Множитель”", 200, 15, 50,2,4), new MultiTargetSoldierRepeatedStrikes("Дмитрий “Многократный”", 200, 15, 50, 2, 4)};
 
         for (int i = 0; i < _numberSoldierPlatoon; i++)
         {
-            AddSoldierToPlatoon(soldierTypes);
+            AddSoldier(soldierTypes);
         }
     }
 
-    public void UpdateListPlatoon()
+    public void UpdateList()
     {
         List<Soldier> deadSoldiers = new List<Soldier>();
 
         foreach (Soldier soldier in _solders)
         {
-            if (soldier.IsDeath)
+            if (soldier.IsSoldierDead)
                 deadSoldiers.Add(soldier);
         }
 
@@ -121,41 +119,46 @@ class Platoon
         }
     }
 
-    public void AttackPlatoon(List<Soldier> platoonEnemy)
+    public void Attack(Platoon platoonEnemy)
     {
         foreach (Soldier attacker in _solders)
         {
-            if (platoonEnemy.Count == 0)
+            if (platoonEnemy.NumberSolders == 0)
                 break;
 
-            if (attacker is MultiTargetSoldierRepeatedStrikes multiTargetSoldier)
+            if (attacker is MultiTargetSoldierRepeatedStrikes multiTargetSoldierRepeat)
             {
-                multiTargetSoldier.Attack(null, platoonEnemy);
+                multiTargetSoldierRepeat.Attack(null, platoonEnemy);
+            }
+            else if (attacker is MultiTargetSoldierNotRepeatedStrikes multiTargetSoldierNotRepeat)
+            {
+                multiTargetSoldierNotRepeat.Attack(null, platoonEnemy);
             }
             else
             {
                 int targetIndex = _solders.IndexOf(attacker);
 
-                if (targetIndex >= 0 && targetIndex < platoonEnemy.Count)
+                if (targetIndex >= 0 && targetIndex < platoonEnemy.NumberSolders)
                 {
-                    attacker.Attack(platoonEnemy[targetIndex]);
+                    attacker.Attack(platoonEnemy.GetSolderByIndex(targetIndex));
                 }
             }
         }
     }
 
-    private void AddSoldierToPlatoon(Soldier[] soldierTypes)
+    public Soldier GetSolderByIndex(int index) => _solders[index];
+
+    private void AddSoldier(Soldier[] soldierTypes)
     {
         int randomValue = UserUtils.GenerateRandomNumber(0, soldierTypes.Length);
-        _solders.Add(soldierTypes[randomValue]);
+        Soldier newSoldier = (Soldier)soldierTypes[randomValue].Clone();
+        _solders.Add(newSoldier);
     }
 }
 
-abstract class Soldier
+abstract class Soldier : ICloneable
 {
     protected float Damage;
-
-    private bool _isDeath;
 
     public Soldier(string name, float health, float damage, float armor)
     {
@@ -168,11 +171,11 @@ abstract class Soldier
     public string Name { get; private set; }
     public float Health { get; private set; }
     public float Armor { get; private set; }
-    public bool IsDeath => _isDeath;
+    public bool IsSoldierDead => Health <= 0;
 
     public void TakeDamage(float damage)
     {
-        if (IsDeath)
+        if (IsSoldierDead)
             return;
 
         float damageDealt = damage - Armor;
@@ -183,19 +186,18 @@ abstract class Soldier
             Armor = 0;
 
         Health -= damageDealt;
-
-        if (Health <= 0)
-            _isDeath = true;
     }
 
-    public abstract void Attack(Soldier soldier = null, List<Soldier> platoon = null);
+    public abstract void Attack(Soldier soldier = null, Platoon platoon = null);
+
+    public object Clone() => MemberwiseClone();
 }
 
 class SingleSoldier : Soldier
 {
     public SingleSoldier(string name, float health, float damage, float armor) : base(name, health, damage, armor) { }
 
-    public override void Attack(Soldier soldier, List<Soldier> platoon)
+    public override void Attack(Soldier soldier, Platoon platoon)
     {
         soldier.TakeDamage(Damage);
         Console.WriteLine("Аттаку произвел " + Name + " по " + soldier.Name + " с силой " + Damage + " жизнями " + Health + " и бронёй " + Armor);
@@ -206,12 +208,12 @@ class SingleTargetHighDamageSoldier : Soldier
 {
     private float _damageMultiplier;
 
-    public SingleTargetHighDamageSoldier(string name, int health, int damage, int armor, float damageMultiplier) : base(name, health, damage, armor)
+    public SingleTargetHighDamageSoldier(string name, float health, float damage, float armor, float damageMultiplier) : base(name, health, damage, armor)
     {
         _damageMultiplier = damageMultiplier;
     }
 
-    public override void Attack(Soldier soldier, List<Soldier> platoon)
+    public override void Attack(Soldier soldier, Platoon platoon)
     {
         soldier.TakeDamage(Damage * _damageMultiplier);
         Console.WriteLine("Аттаку произвел " + Name + " по " + soldier.Name + " с силой " + Damage + " жизнями " + Health + " и бронёй " + Armor);
@@ -221,23 +223,28 @@ class SingleTargetHighDamageSoldier : Soldier
 class MultiTargetSoldierRepeatedStrikes : Soldier
 {
     private int _numberSoldiersPerStrike;
+    private int _minNumberSoldiersAttacked;
+    private int _maxNumberSoldiersAttacked;
 
-    public MultiTargetSoldierRepeatedStrikes(string name, int health, int damage, int armor, int minNumberSoldiersAttacked, int maxNumberSoldiersAttacked) : base(name, health, damage, armor)
+    public MultiTargetSoldierRepeatedStrikes(string name, float health, float damage, float armor, int minNumberSoldiersAttacked, int maxNumberSoldiersAttacked) : base(name, health, damage, armor)
     {
-        if (minNumberSoldiersAttacked > maxNumberSoldiersAttacked)
-            minNumberSoldiersAttacked = maxNumberSoldiersAttacked--;
+        _minNumberSoldiersAttacked = minNumberSoldiersAttacked;
+        _maxNumberSoldiersAttacked = maxNumberSoldiersAttacked;
 
-        _numberSoldiersPerStrike = UserUtils.GenerateRandomNumber(minNumberSoldiersAttacked, maxNumberSoldiersAttacked);
+        if (_minNumberSoldiersAttacked > _maxNumberSoldiersAttacked)
+            _minNumberSoldiersAttacked = _maxNumberSoldiersAttacked--;
+
+        _numberSoldiersPerStrike = UserUtils.GenerateRandomNumber(_minNumberSoldiersAttacked, _maxNumberSoldiersAttacked);
     }
 
-    public override void Attack(Soldier soldier, List<Soldier> platoon)
+    public override void Attack(Soldier soldier, Platoon platoonEnemy)
     {
-        List<int> numbers = GenerateRandomIndices(platoon.Count, _numberSoldiersPerStrike);
+        List<int> numbers = GenerateRandomIndices(platoonEnemy.NumberSolders, _numberSoldiersPerStrike);
 
         foreach (int index in numbers)
         {
-            platoon[index].TakeDamage(Damage);
-            Console.WriteLine("Аттаку произвел " + Name + " по " + platoon[index].Name + " с силой " + Damage + " жизнями " + Health + " и бронёй " + Armor);
+            platoonEnemy.GetSolderByIndex(index).TakeDamage(Damage);
+            Console.WriteLine("Аттаку произвел " + Name + " по " + platoonEnemy.GetSolderByIndex(index).Name + " с силой " + Damage + " жизнями " + Health + " и бронёй " + Armor);
         }
     }
 
@@ -259,23 +266,28 @@ class MultiTargetSoldierRepeatedStrikes : Soldier
 class MultiTargetSoldierNotRepeatedStrikes : Soldier
 {
     private int _numberSoldiersPerStrike;
+    private int _minNumberSoldiersAttacked;
+    private int _maxNumberSoldiersAttacked;
 
-    public MultiTargetSoldierNotRepeatedStrikes(string name, int health, int damage, int armor, int minNumberSoldiersAttacked, int maxNumberSoldiersAttacked) : base(name, health, damage, armor)
+    public MultiTargetSoldierNotRepeatedStrikes(string name, float health, float damage, float armor, int minNumberSoldiersAttacked, int maxNumberSoldiersAttacked) : base(name, health, damage, armor)
     {
-        if (minNumberSoldiersAttacked > maxNumberSoldiersAttacked)
-            minNumberSoldiersAttacked = maxNumberSoldiersAttacked--;
+        _minNumberSoldiersAttacked = minNumberSoldiersAttacked;
+        _maxNumberSoldiersAttacked = maxNumberSoldiersAttacked;
 
-        _numberSoldiersPerStrike = UserUtils.GenerateRandomNumber(minNumberSoldiersAttacked, maxNumberSoldiersAttacked);
+        if (_minNumberSoldiersAttacked > _maxNumberSoldiersAttacked)
+            _minNumberSoldiersAttacked = _maxNumberSoldiersAttacked--;
+
+        _numberSoldiersPerStrike = UserUtils.GenerateRandomNumber(_minNumberSoldiersAttacked, _maxNumberSoldiersAttacked);
     }
 
-    public override void Attack(Soldier soldier, List<Soldier> platoon)
+    public override void Attack(Soldier soldier, Platoon platoonEnemy)
     {
-        List<int> numbers = GenerateRandomIndices(platoon.Count, _numberSoldiersPerStrike);
+        List<int> numbers = GenerateRandomIndices(platoonEnemy.NumberSolders, _numberSoldiersPerStrike);
 
         foreach (int index in numbers)
         {
-            platoon[index].TakeDamage(Damage);
-            Console.WriteLine("Аттаку произвел " + Name + " по " + platoon[index].Name + " с силой " + Damage + " жизнями " + Health + " и бронёй " + Armor);
+            platoonEnemy.GetSolderByIndex(index).TakeDamage(Damage);
+            Console.WriteLine("Аттаку произвел " + Name + " по " + platoonEnemy.GetSolderByIndex(index).Name + " с силой " + Damage + " жизнями " + Health + " и бронёй " + Armor);
         }
     }
 
