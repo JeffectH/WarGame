@@ -8,7 +8,7 @@ namespace WarGame
         static void Main(string[] args)
         {
             Battlefield battlefield = new Battlefield();
-            battlefield.Fight();
+            battlefield.Start();
         }
     }
 
@@ -24,7 +24,7 @@ namespace WarGame
             _secondPlatoon = new Platoon(_numberSoldierPlatoon);
         }
 
-        public void Fight()
+        public void Start()
         {
             Console.WriteLine("Сейчас будет битва. 2 взвода. В каждом взводе по " + _numberSoldierPlatoon + " солдат\r\n");
             Console.WriteLine("В каждом взводе присутствуют 4 типа солдат.\r\n");
@@ -41,6 +41,14 @@ namespace WarGame
             Console.ReadKey();
             Console.Clear();
 
+            Fight();
+            ChoosingWinner();
+
+            Console.ReadKey();
+        }
+
+        private void Fight()
+        {
             while (_firstPlatoon.NumberSolders != 0 && _secondPlatoon.NumberSolders != 0)
             {
                 Console.WriteLine("\nАттакует взвод №1 \n");
@@ -57,7 +65,10 @@ namespace WarGame
 
                 Console.ReadKey();
             }
+        }
 
+        private void ChoosingWinner()
+        {
             if (_firstPlatoon.NumberSolders == 0 && _secondPlatoon.NumberSolders == 0)
             {
                 Console.WriteLine("\nНичья");
@@ -70,8 +81,6 @@ namespace WarGame
             {
                 Console.WriteLine("\nПобеда взвода 1");
             }
-
-            Console.ReadKey();
         }
     }
 }
@@ -243,12 +252,13 @@ class MultiTargetSoldierRepeatedStrikes : Soldier
 
         foreach (int index in numbers)
         {
-            platoonEnemy.GetSolderByIndex(index).TakeDamage(Damage);
-            Console.WriteLine("Аттаку произвел " + Name + " по " + platoonEnemy.GetSolderByIndex(index).Name + " с силой " + Damage + " жизнями " + Health + " и бронёй " + Armor);
+            Soldier soldierEnemy = platoonEnemy.GetSolderByIndex(index);
+            soldierEnemy.TakeDamage(Damage);
+            Console.WriteLine("Аттаку произвел " + Name + " по " + soldierEnemy.Name + " с силой " + Damage + " жизнями " + Health + " и бронёй " + Armor);
         }
     }
 
-    public List<int> GenerateRandomIndices(int maxIndex, int count)
+    private List<int> GenerateRandomIndices(int maxIndex, int count)
     {
         List<int> indices = new List<int>();
 
@@ -286,8 +296,9 @@ class MultiTargetSoldierNotRepeatedStrikes : Soldier
 
         foreach (int index in numbers)
         {
-            platoonEnemy.GetSolderByIndex(index).TakeDamage(Damage);
-            Console.WriteLine("Аттаку произвел " + Name + " по " + platoonEnemy.GetSolderByIndex(index).Name + " с силой " + Damage + " жизнями " + Health + " и бронёй " + Armor);
+            Soldier soldierEnemy = platoonEnemy.GetSolderByIndex(index);
+            soldierEnemy.TakeDamage(Damage);
+            Console.WriteLine("Аттаку произвел " + Name + " по " + soldierEnemy.Name + " с силой " + Damage + " жизнями " + Health + " и бронёй " + Armor);
         }
     }
 
