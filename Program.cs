@@ -135,22 +135,11 @@ class Platoon
             if (platoonEnemy.NumberSolders == 0)
                 break;
 
-            if (attacker is MultiTargetSoldierRepeatedStrikes multiTargetSoldierRepeat)
-            {
-                multiTargetSoldierRepeat.Attack(null, platoonEnemy);
-            }
-            else if (attacker is MultiTargetSoldierNotRepeatedStrikes multiTargetSoldierNotRepeat)
-            {
-                multiTargetSoldierNotRepeat.Attack(null, platoonEnemy);
-            }
-            else
-            {
-                int targetIndex = _solders.IndexOf(attacker);
+            int targetIndex = _solders.IndexOf(attacker);
 
-                if (targetIndex >= 0 && targetIndex < platoonEnemy.NumberSolders)
-                {
-                    attacker.Attack(platoonEnemy.GetSolderByIndex(targetIndex));
-                }
+            if (targetIndex >= 0 && targetIndex < platoonEnemy.NumberSolders)
+            {
+                attacker.Attack(platoonEnemy.GetSolderByIndex(targetIndex), platoonEnemy);
             }
         }
     }
